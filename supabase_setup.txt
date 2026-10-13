@@ -1,0 +1,60 @@
+-- Deadline Planner Ultimate: Supabase schema
+-- Run this script in Supabase SQL Editor.
+
+create table if not exists public.dp_projects (
+  id text not null,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  color text not null default '#5268f5',
+  created_at timestamptz not null default now(),
+  primary key (user_id, id)
+);
+
+create table if not exists public.dp_tasks (
+  id text not null,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  due date,
+  time text,
+  project_id text,
+  priority text not null default 'medium',
+  status text not null default 'active',
+  progress integer not null default 0 check (progress >= 0 and progress <= 100),
+  remind_minutes integer not null default 0,
+  notes text not null default '',
+  updated_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  primary key (user_id, id)
+);
+
+create index if not exists dp_tasks_user_due_idx
+  on public.dp_tasks (user_id, due);
+
+alter table public.dp_projects enable row level security;
+alter table public.dp_tasks enable row level security;
+
+drop policy if exists "Users can view own projects" on public.dp_projects;
+create policy "Users can view own projects" on public.dp_projects
+  for select to authenticated using (auth.uid() = user_id);
+drop policy if exists "Users can insert own projects" on public.dp_projects;
+create policy "Users can insert own projects" on public.dp_projects
+  for insert to authenticated with check (auth.uid() = user_id);
+drop policy if exists "Users can update own projects" on public.dp_projects;
+create policy "Users can update own projects" on public.dp_projects
+  for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "Users can delete own projects" on public.dp_projects;
+create policy "Users can delete own projects" on public.dp_projects
+  for delete to authenticated using (auth.uid() = user_id);
+
+drop policy if exists "Users can view own tasks" on public.dp_tasks;
+create policy "Users can view own tasks" on public.dp_tasks
+  for select to authenticated using (auth.uid() = user_id);
+drop policy if exists "Users can insert own tasks" on public.dp_tasks;
+create policy "Users can insert own tasks" on public.dp_tasks
+  for insert to authenticated with check (auth.uid() = user_id);
+drop policy if exists "Users can update own tasks" on public.dp_tasks;
+create policy "Users can update own tasks" on public.dp_tasks
+  for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "Users can delete own tasks" on public.dp_tasks;
+create policy "Users can delete own tasks" on public.dp_tasks
+  for delete to authenticated using (auth.uid() = user_id);
